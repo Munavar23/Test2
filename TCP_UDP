@@ -1,0 +1,113 @@
+TCP Client:
+int m_socket = socket(AF_INET, SOCK_STREAM, 0);
+if (m_socket < 0) {
+    AfxMessageBox(L"Socket creation failed");
+    return false;
+}
+
+struct sockaddr_in st_serverAddr;
+memset(&st_serverAddr, 0, sizeof(st_serverAddr));
+st_serverAddr.sin_family = AF_INET;
+st_serverAddr.sin_port = htons(server_port);                // Example: 5000
+st_serverAddr.sin_addr.s_addr = inet_addr(server_ip);       // Example: "127.0.0.1"
+
+if (connect(m_socket, (struct sockaddr*)&st_serverAddr, sizeof(st_serverAddr)) == -1) {
+    AfxMessageBox(L"Connect failed");
+    return false;
+}
+
+// Now you can use m_socket with send()/recv()
+
+return true;
+
+-----------------------------------------------------------
+
+TCP server:
+int m_socket = socket(AF_INET, SOCK_STREAM, 0);
+if (m_socket < 0) {
+    AfxMessageBox(L"Socket creation failed");
+    return false;
+}
+
+struct sockaddr_in st_localAddr;
+memset(&st_localAddr, 0, sizeof(st_localAddr));
+st_localAddr.sin_family = AF_INET;
+st_localAddr.sin_port = htons(nlocal_port);                  // Example: 5000
+st_localAddr.sin_addr.s_addr = inet_addr(strLocalHost);      // Example: "127.0.0.1"
+
+if (bind(m_socket, (struct sockaddr*)&st_localAddr, sizeof(st_localAddr)) == -1) {
+    AfxMessageBox(L"Bind failed");
+    return false;
+}
+
+if (listen(m_socket, 5) == -1) {  // Allow up to 5 pending connections
+    AfxMessageBox(L"Listen failed");
+    return false;
+}
+
+// Accept client
+sockaddr_in st_clientAddr;
+socklen_t clientLen = sizeof(st_clientAddr);
+int clientSocket = accept(m_socket, (struct sockaddr*)&st_clientAddr, &clientLen);
+if (clientSocket < 0) {
+    AfxMessageBox(L"Accept failed");
+    return false;
+}
+
+// Now you can use clientSocket with recv()/send()
+
+return true;
+
+----------------------------------------------------------------------------------
+
+UDP:
+client:
+struct sockaddr_in m_dauaddr, m_ddruaddr;
+
+m_socket = socket(AF_INET, SOCK_DGRAM, 0);
+
+memset(&m_dauaddr, 0, sizeof(struct sockaddr_in));
+m_dauaddr.sin_family = AF_INET;
+m_dauaddr.sin_port = htons(dau_port);
+m_dauaddr.sin_addr.s_addr = inet_addr(dau_host);  // For sendto()
+
+memset(&m_ddruaddr, 0, sizeof(struct sockaddr_in));
+m_ddruaddr.sin_family = AF_INET;
+m_ddruaddr.sin_port = htons(ddru_port);
+m_ddruaddr.sin_addr.s_addr = inet_addr(ddru_host);
+
+if (bind(m_socket, (struct sockaddr*)&m_ddruaddr, sizeof(struct sockaddr_in)) == -1)
+{
+    // Fallback to port 100
+    m_ddruaddr.sin_port = htons(100);
+    if (bind(m_socket, (struct sockaddr*)&m_ddruaddr, sizeof(struct sockaddr_in)) == -1)
+    {
+        AfxMessageBox(L"Failed to bind client datagram socket");
+        return false;
+    }
+}
+return true;
+
+----------------------------------------------------------------------------------------
+ server code:
+ struct sockaddr_in st_RemoteAddr, st_localAddr;
+
+m_socket = socket(AF_INET, SOCK_DGRAM, 0);
+
+memset(&st_RemoteAddr, 0, sizeof(struct sockaddr_in));
+st_RemoteAddr.sin_family = AF_INET;
+st_RemoteAddr.sin_port = htons(nRemote_port);
+st_RemoteAddr.sin_addr.s_addr = inet_addr(strRemoteHost);  // Only needed if sending data
+
+memset(&st_localAddr, 0, sizeof(struct sockaddr_in));
+st_localAddr.sin_family = AF_INET;
+st_localAddr.sin_port = htons(nlocal_port);
+st_localAddr.sin_addr.s_addr = inet_addr(strLocalHost);
+
+if (bind(m_socket, (struct sockaddr*)&st_localAddr, sizeof(struct sockaddr_in)) == -1)
+{
+    AfxMessageBox(L"Failed to bind datagram socket");
+    return false;
+}
+return true;
+
